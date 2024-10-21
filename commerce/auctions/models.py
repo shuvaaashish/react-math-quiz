@@ -5,11 +5,13 @@ from django.db import models
 class User(AbstractUser):
     pass
 
-class auction_listings(models.Model):
+class Auction_listings(models.Model):
+    title=models.CharField(max_length=64)
+    Owner=models.ForeignKey(User, on_delete=models.CASCADE , related_name="seller")
+    description=models.CharField(max_length=350)
+
+class Bids(models.Model):
     pass
 
-class bids(models.Model):
-    pass
-
-class comments(models.Model):
+class Comments(models.Model):
     pass
