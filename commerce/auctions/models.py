@@ -12,8 +12,9 @@ class Auction_listings(models.Model):
     imgurl=models.CharField(max_length=99999)
     startingbid = models.DecimalField(max_digits=10, decimal_places=2)
 
-
-
+    def __str__(self):
+        return self.title
+    
 class Bids(models.Model):
     pass
 
