@@ -3,12 +3,16 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.shortcuts import get_object_or_404
 
-from .models import User,Auction_listings
+from .models import User,Auction_listings,Category
 
 
 def index(request):
-    return render(request, "auctions/index.html")
+    listings=Auction_listings.objects.filter(is_active=True)
+    return render(request, "auctions/index.html",{
+        "listings":listings
+    })
 
 
 def login_view(request):
@@ -65,13 +69,16 @@ def create(request):
     owner=request.user
     if request.method=="GET":
         return render(request,"auctions/create.html",{
-            "owner":owner
+            "owner":owner,
+            "cars":Category.objects.all()
         })
     else:
         title=request.POST['title']
         description=request.POST['description']
         imgurl=request.POST['imgurl']
         stbid=request.POST['stbid']
-        newlisting=Auction_listings(title=title, Owner=owner, description=description, imgurl=imgurl, startingbid=stbid )
+        category=request.POST['category']
+        category_instance = get_object_or_404(Category, name=category)
+        newlisting=Auction_listings(title=title, Owner=owner, description=description, imgurl=imgurl, startingbid=stbid, category=category_instance )
         newlisting.save()
         return HttpResponseRedirect(reverse("index"))
