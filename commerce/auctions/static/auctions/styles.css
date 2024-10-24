@@ -24,4 +24,20 @@ label {
     margin-bottom: 5px; 
     display: block; 
 }
+.category-card {
+    transition: transform 0.2s;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.category-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
 
+
+.category-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}

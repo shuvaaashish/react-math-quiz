@@ -21,8 +21,17 @@ class Auction_listings(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.title
+        return f' {self.id} {self.title}'
     
+class Watchlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    listing = models.ForeignKey(Auction_listings, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'listing')
+
+    def __str__(self):
+        return f"{self.user}'s watchlist: {self.listing.title}"
     
 class Bids(models.Model):
     pass

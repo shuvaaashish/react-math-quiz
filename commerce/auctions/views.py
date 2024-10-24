@@ -5,17 +5,21 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 
-from .models import User,Auction_listings,Category
+from .models import User,Auction_listings,Category,Watchlist
 
 
 def index(request):
     listings=Auction_listings.objects.filter(is_active=True)
+    categories=Category.objects.all()
     return render(request, "auctions/index.html",{
-        "listings":listings
+        "listings":listings,
+        "categories":categories,
+        "heading":"Active Listing"
     })
 
 
 def login_view(request):
+    categories=Category.objects.all()
     if request.method == "POST":
 
         # Attempt to sign user in
@@ -29,10 +33,13 @@ def login_view(request):
             return HttpResponseRedirect(reverse("index"))
         else:
             return render(request, "auctions/login.html", {
-                "message": "Invalid username and/or password."
+                "message": "Invalid username and/or password.",
+                "categories":categories
             })
     else:
-        return render(request, "auctions/login.html")
+        return render(request, "auctions/login.html",{
+            "categories":categories
+        })
 
 
 def logout_view(request):
@@ -41,6 +48,7 @@ def logout_view(request):
 
 
 def register(request):
+    categories=Category.objects.all()
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
@@ -50,7 +58,8 @@ def register(request):
         confirmation = request.POST["confirmation"]
         if password != confirmation:
             return render(request, "auctions/register.html", {
-                "message": "Passwords must match."
+                "message": "Passwords must match.",
+                "categories":categories
             })
 
         # Attempt to create new user
@@ -59,7 +68,8 @@ def register(request):
             user.save()
         except IntegrityError:
             return render(request, "auctions/register.html", {
-                "message": "Username already taken."
+                "message": "Username already taken.",
+                "categories":categories
             })
         login(request, user)
         return HttpResponseRedirect(reverse("index"))
@@ -70,7 +80,8 @@ def create(request):
     if request.method=="GET":
         return render(request,"auctions/create.html",{
             "owner":owner,
-            "cars":Category.objects.all()
+            "cars":Category.objects.all(),
+            "categories":Category.objects.all()
         })
     else:
         title=request.POST['title']
@@ -82,3 +93,38 @@ def create(request):
         newlisting=Auction_listings(title=title, Owner=owner, description=description, imgurl=imgurl, startingbid=stbid, category=category_instance )
         newlisting.save()
         return HttpResponseRedirect(reverse("index"))
+    
+def listing_detail(request,listing_id):
+    listing=Auction_listings.objects.get(id=listing_id)
+    T_F=request.user = Watchlist.user
+    if request.method=="GET":
+        return render(request, "auctions/listing_detail.html",{
+        "listing":listing,
+        "categories":Category.objects.all(),
+        "T_F":T_F
+        })
+    else:
+        user=request.user
+        listing_instance=Auction_listings.objects.get(id=listing_id)
+        watchlist_item=Watchlist(user=user,listing=listing_instance)
+        watchlist_item.save()
+        return HttpResponseRedirect(reverse("index"))
+
+
+
+def categories(request):
+    categories=Category.objects.all()
+    return render(request, "auctions/category.html",{
+        "categories": categories,
+    })
+
+def category_name(request,category_name):
+    category = get_object_or_404(Category, name=category_name)
+    listing=Auction_listings.objects.filter(category=category, is_active=True)
+    heading=f'Active listings of {category.name} cars'
+    return render(request, "auctions/index.html",{
+        "listings":listing,
+        "categories":category,
+        "heading":heading
+    })
+    
