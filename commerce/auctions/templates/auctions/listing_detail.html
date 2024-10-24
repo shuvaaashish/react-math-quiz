@@ -1,0 +1,34 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div class="container mt-5">
+    <h2>{{ listing.title }}</h2>
+    <p>{{ listing.description }}</p>
+    <p class="h4">Current Price: ${{ listing.startingbid }}</p>
+    <img src="{{ listing.imgurl }}" alt="{{ listing.title }}" class="img-fluid mb-3"><br>
+    <div class="watchlist-section">
+        {% if user.is_authenticated %}
+                {% csrf_token %}
+                {% if T_F %}
+                    <form method="post" action="{% url 'remove' listing.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            Remove from Watchlist
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'add' listing.id %} ">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary"> 
+                            Add to Watchlist
+                        </button>
+                    </form>
+                {% endif %}
+        {% else %}
+            <p class="text-warning">You must be logged in to manage your watchlist.</p>
+            <a href="{% url 'login' %}" class="btn btn-secondary mt-3">Log In</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

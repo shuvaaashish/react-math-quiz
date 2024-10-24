@@ -96,7 +96,10 @@ def create(request):
     
 def listing_detail(request,listing_id):
     listing=Auction_listings.objects.get(id=listing_id)
-    T_F=request.user = Watchlist.user
+    if request.user.is_authenticated:
+        T_F = Watchlist.objects.filter(user=request.user, listing=listing).exists()
+    else:
+        T_F = False
     if request.method=="GET":
         return render(request, "auctions/listing_detail.html",{
         "listing":listing,
@@ -128,3 +131,13 @@ def category_name(request,category_name):
         "heading":heading
     })
     
+def remove(request,listing_id):
+    listing=Auction_listings.objects.get(id=listing_id)
+    watchlist_item = Watchlist.objects.filter(user=request.user, listing=listing)
+    watchlist_item.delete()
+    return HttpResponseRedirect(reverse("listing_detail", args=[listing_id]))
+
+def add(request,listing_id):
+    listing=Auction_listings.objects.get(id=listing_id)
+    Watchlist.objects.create(user=request.user, listing=listing)
+    return HttpResponseRedirect(reverse("listing_detail", args=[listing_id]))
