@@ -4,8 +4,10 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from decimal import Decimal
 
-from .models import User,Auction_listings,Category,Watchlist
+from .models import User,Auction_listings,Category,Watchlist,Bids,Comments
 
 
 def index(request):
@@ -90,12 +92,15 @@ def create(request):
         stbid=request.POST['stbid']
         category=request.POST['category']
         category_instance = get_object_or_404(Category, name=category)
-        newlisting=Auction_listings(title=title, Owner=owner, description=description, imgurl=imgurl, startingbid=stbid, category=category_instance )
+        bid=Bids(bid=stbid,user=owner)
+        bid.save()
+        newlisting=Auction_listings(title=title, Owner=owner, description=description, imgurl=imgurl, startingbid=bid, category=category_instance )
         newlisting.save()
         return HttpResponseRedirect(reverse("index"))
     
 def listing_detail(request,listing_id):
     listing=Auction_listings.objects.get(id=listing_id)
+    comments=Comments.objects.filter(listing=listing_id)
     if request.user.is_authenticated:
         T_F = Watchlist.objects.filter(user=request.user, listing=listing).exists()
     else:
@@ -104,7 +109,8 @@ def listing_detail(request,listing_id):
         return render(request, "auctions/listing_detail.html",{
         "listing":listing,
         "categories":Category.objects.all(),
-        "T_F":T_F
+        "T_F":T_F,
+        "comments":comments,
         })
     else:
         user=request.user
@@ -141,3 +147,47 @@ def add(request,listing_id):
     listing=Auction_listings.objects.get(id=listing_id)
     Watchlist.objects.create(user=request.user, listing=listing)
     return HttpResponseRedirect(reverse("listing_detail", args=[listing_id]))
+
+def watchlist(request):
+    user=request.user
+    watchlist_items=Watchlist.objects.filter(user=user)
+    listings=[item.listing for item in watchlist_items]
+    return render(request,'auctions/index.html',{
+        "listings":listings,
+        "heading":"Watchlist"
+    })
+
+def add_comments(request,listing_id):
+    user=request.user
+    listing=Auction_listings.objects.get(id=listing_id)
+    content=request.POST['content']
+    newcomment=Comments(user=user,listing=listing,content=content)
+    newcomment.save()
+    return HttpResponseRedirect(reverse("listing_detail",args=[listing_id]))
+
+def add_bid(request,listing_id):
+    user=request.user
+    listing=Auction_listings.objects.get(id=listing_id)
+    if user==listing.Owner:
+        messages.warning(request, "You cannot bid on your own item.")
+        return HttpResponseRedirect(reverse("listing_detail", args=[listing_id]))
+    
+    bid=request.POST['bid']
+    bid__=Decimal(bid)
+    newbid=Bids(user=user,bid=bid__)
+    newbid.save()
+    listing.startingbid=newbid
+    listing.save()
+    messages.success(request, "Your bid has been placed successfully!")
+
+    return HttpResponseRedirect(reverse("listing_detail", args=[listing_id]))
+
+def close(request,listing_id):
+    listing=Auction_listings.objects.get(id=listing_id)
+    listing.is_active=False
+    listing.save()
+    highest_bid = listing.startingbid
+    messages.success(request, "Auction closed successfully!")
+
+    return HttpResponseRedirect(reverse("listing_detail", args=[listing_id]))
+    

@@ -1,33 +1,108 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-<div class="container mt-5">
-    <h2>{{ listing.title }}</h2>
-    <p>{{ listing.description }}</p>
-    <p class="h4">Current Price: ${{ listing.startingbid }}</p>
-    <img src="{{ listing.imgurl }}" alt="{{ listing.title }}" class="img-fluid mb-3"><br>
-    <div class="watchlist-section">
-        {% if user.is_authenticated %}
-                {% csrf_token %}
-                {% if T_F %}
-                    <form method="post" action="{% url 'remove' listing.id %}">
+<div class="container">
+
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% if not listing.is_active and listing.startingbid %}
+        {% if user == listing.startingbid.user %}
+            <div class="alert alert-success" role="alert">
+                Congratulations! You won the auction with a bid of ${{ listing.startingbid.bid }}.
+            </div>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                The auction has been closed. The winning bid was ${{ listing.startingbid.bid }}.
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <div class="container mt-5">
+        <h2>{{ listing.title }}</h2>
+        <p>{{ listing.description }}</p>
+        <p class="h4">Current Price: ${{ listing.startingbid.bid }}</p>
+        <img src="{{ listing.imgurl }}" alt="{{ listing.title }}" class="img-fluid mb-3"><br>
+        
+        <div class="comments-section">
+            <h3>Comments</h3>
+            <ul class="comments-list">
+                {% for comment in comments %}
+                    <li>
+                        <strong>{{ comment.user }}</strong>: {{ comment.content }}
+                    </li>
+                {% empty %}
+                    <li>No comments yet.</li>
+                {% endfor %}
+            </ul>
+            <div class="bidform mb-3">
+                {% if user == listing.Owner and listing.is_active %}
+                    <form action="{% url 'close' listing.id %}" method="post">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">
-                            Remove from Watchlist
-                        </button>
-                    </form>
-                {% else %}
-                    <form method="post" action="{% url 'add' listing.id %} ">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary"> 
-                            Add to Watchlist
-                        </button>
+                        <button type="submit" class="btn btn-danger">Close</button>
                     </form>
                 {% endif %}
-        {% else %}
-            <p class="text-warning">You must be logged in to manage your watchlist.</p>
-            <a href="{% url 'login' %}" class="btn btn-secondary mt-3">Log In</a>
-        {% endif %}
+                
+                {% if user.is_authenticated and listing.is_active %}
+                    <form action="{% url 'add_bid' listing.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input type="number" class="form-control" name="bid" placeholder="Come on Bid" min="{{ listing.startingbid.bid }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Bid</button>
+                    </form>
+                {% elif not listing.is_active %}
+                    <p class="text-danger">This listing has already been closed.</p>
+                {% else %}
+                    <p class="text-danger">You must be logged in to bid.</p>
+                {% endif %}
+            </div>
+
+            <div class="comment-form mb-3">
+                {% if user.is_authenticated %}
+                    <form action="{% url 'add_comments' listing.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="content" rows="3" placeholder="Add a comment..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                {% else %}
+                    <p class="text-danger">You must be logged in to comment.</p>
+                {% endif %}
+            </div>
+
+            <div class="watchlist-section">
+                {% if user.is_authenticated %}
+                    {% csrf_token %}
+                    {% if T_F %}
+                        {% if listing.is_active %}
+                            <form method="post" action="{% url 'remove' listing.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    Remove from Watchlist
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        {% if listing.is_active %}
+                            <form method="post" action="{% url 'add' listing.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary"> 
+                                    Add to Watchlist
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <p class="text-warning">You must be logged in to manage your watchlist.</p>
+                    <a href="{% url 'login' %}" class="btn btn-secondary mt-3">Log In</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
