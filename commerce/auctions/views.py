@@ -92,7 +92,8 @@ def create(request):
         stbid=request.POST['stbid']
         category=request.POST['category']
         category_instance = get_object_or_404(Category, name=category)
-        bid=Bids(bid=stbid,user=owner)
+        stbid_clean = stbid.replace('$', '').strip()
+        bid = Bids(bid=stbid_clean,user=owner)
         bid.save()
         newlisting=Auction_listings(title=title, Owner=owner, description=description, imgurl=imgurl, startingbid=bid, category=category_instance )
         newlisting.save()
