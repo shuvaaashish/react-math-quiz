@@ -12,16 +12,14 @@ from .models import User,Auction_listings,Category,Watchlist,Bids,Comments
 
 def index(request):
     listings=Auction_listings.objects.filter(is_active=True)
-    categories=Category.objects.all()
     return render(request, "auctions/index.html",{
         "listings":listings,
-        "categories":categories,
         "heading":"Active Listing"
     })
 
 
 def login_view(request):
-    categories=Category.objects.all()
+    
     if request.method == "POST":
 
         # Attempt to sign user in
@@ -36,11 +34,10 @@ def login_view(request):
         else:
             return render(request, "auctions/login.html", {
                 "message": "Invalid username and/or password.",
-                "categories":categories
             })
     else:
         return render(request, "auctions/login.html",{
-            "categories":categories
+            
         })
 
 
@@ -50,7 +47,6 @@ def logout_view(request):
 
 
 def register(request):
-    categories=Category.objects.all()
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
@@ -61,7 +57,6 @@ def register(request):
         if password != confirmation:
             return render(request, "auctions/register.html", {
                 "message": "Passwords must match.",
-                "categories":categories
             })
 
         # Attempt to create new user
@@ -71,7 +66,6 @@ def register(request):
         except IntegrityError:
             return render(request, "auctions/register.html", {
                 "message": "Username already taken.",
-                "categories":categories
             })
         login(request, user)
         return HttpResponseRedirect(reverse("index"))
@@ -109,7 +103,6 @@ def listing_detail(request,listing_id):
     if request.method=="GET":
         return render(request, "auctions/listing_detail.html",{
         "listing":listing,
-        "categories":Category.objects.all(),
         "T_F":T_F,
         "comments":comments,
         })
@@ -134,7 +127,6 @@ def category_name(request,category_name):
     heading=f'Active listings of {category.name} cars'
     return render(request, "auctions/index.html",{
         "listings":listing,
-        "categories":category,
         "heading":heading
     })
     
